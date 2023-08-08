@@ -200,7 +200,6 @@ class BaseCAM:
                  aug_smooth: bool = False,
                  eigen_smooth: bool = False) -> np.ndarray:
 
-        print('testing something')
         # Smooth the CAM result with test time augmentation
         if aug_smooth is True:
             return self.forward_augmentation_smoothing(
