@@ -52,6 +52,8 @@ class BaseCAM:
                                        targets,
                                        activations,
                                        grads)
+        
+      
         weighted_activations = weights[:, :, None, None] * activations
         if eigen_smooth:
             cam = get_2d_projection(weighted_activations)
@@ -70,10 +72,16 @@ class BaseCAM:
         if self.compute_input_gradient:
             input_tensor = torch.autograd.Variable(input_tensor,
                                                    requires_grad=True)
-
+   
         outputs = self.activations_and_grads(input_tensor)
+        
+        # the loss that we use has two outputs, the scene vector predictions and uncertainties predictions.
+        # we only use the first output for now
+        if isinstance(outputs,list):
+            outputs = outputs[0] 
         if targets is None:
             target_categories = np.argmax(outputs.cpu().data.numpy(), axis=-1)
+            print('TARGET_CATEGORIES', target_categories)
             targets = [ClassifierOutputTarget(
                 category) for category in target_categories]
 
@@ -95,6 +103,8 @@ class BaseCAM:
         cam_per_layer = self.compute_cam_per_layer(input_tensor,
                                                    targets,
                                                    eigen_smooth)
+
+    
         return self.aggregate_multi_layers(cam_per_layer)
 
     def get_target_width_height(self,
@@ -130,7 +140,15 @@ class BaseCAM:
                                      layer_activations,
                                      layer_grads,
                                      eigen_smooth)
-            cam = np.maximum(cam, 0)
+            
+
+            # cam after relu function
+            # cam = np.maximum(cam, 0)
+            #take the absolute value instead of relu ,for regression we care about both negative and positive
+            #changes
+            cam = np.abs(cam)
+            #take a sigmoid of the image to rescale it in a  uniform distribution 
+            # cam  = 1 /(1 + np.exp(cam))
             scaled = scale_cam_image(cam, target_size)
             cam_per_target_layer.append(scaled[:, None, :])
 
@@ -140,7 +158,9 @@ class BaseCAM:
             self,
             cam_per_target_layer: np.ndarray) -> np.ndarray:
         cam_per_target_layer = np.concatenate(cam_per_target_layer, axis=1)
-        cam_per_target_layer = np.maximum(cam_per_target_layer, 0)
+        # cam_per_target_layer = np.maximum(cam_per_target_layer, 0)
+        #replace relu by absolute value
+        cam_per_target_layer = np.abs(cam_per_target_layer)
         result = np.mean(cam_per_target_layer, axis=1)
         return scale_cam_image(result)
 
