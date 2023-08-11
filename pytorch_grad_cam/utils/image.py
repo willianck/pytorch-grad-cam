@@ -52,14 +52,14 @@ def show_cam_on_image(img: np.ndarray,
         heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
     heatmap = np.float32(heatmap) / 255
 
-    # if use_grayscale:
-    #     img = cv2.cvtColor(np.uint8(255 * img), cv2.COLOR_RGB2GRAY)
-    #     img = np.float32(img) / 255
-    #     img = np.dstack([img]*3) 
+    if use_grayscale:
+        img = cv2.cvtColor(np.uint8(255 * img), cv2.COLOR_RGB2GRAY)
+        img = np.float32(img) / 255
+        img = np.dstack([img]*3) 
 
-    # if np.max(img) > 1:
-    #     raise Exception(
-    #         "The input image should np.float32 in the range [0, 1]")
+    if np.max(img) > 1:
+        raise Exception(
+            "The input image should np.float32 in the range [0, 1]")
 
     if image_weight < 0 or image_weight > 1:
         raise Exception(
@@ -67,9 +67,8 @@ def show_cam_on_image(img: np.ndarray,
                 Got: {image_weight}")
 
     cam = (1 - image_weight) * heatmap + image_weight * img
-    # cam = cam / np.max(cam)
-    # return np.uint8(255 * cam)
-    return np.uint8(255 * heatmap)
+    cam = cam / np.max(cam)
+    return np.uint8(255 * cam)
 
 
 def create_labels_legend(concept_scores: np.ndarray,
